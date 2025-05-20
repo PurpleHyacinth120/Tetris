@@ -1,2 +1,2 @@
-Install the dependencies
+Install the dependencies \
 Run ./main
