@@ -2,9 +2,7 @@
 #include <ctime>
 #include <vector>
 #include <string>
-#include <SFML/Audio.hpp>
 
-sf::Music music;
 const int WIDTH = 10;
 const int HEIGHT = 20;
 const int BLOCK_SIZE = 30;
@@ -90,7 +88,6 @@ void tick() {
         if (!check()) for (int i = 0; i < 4; ++i) current[i] = backup[i];
     }
 
-    // Move down
     for (int i = 0; i < 4; ++i) backup[i] = current[i];
     for (int i = 0; i < 4; ++i) current[i].y += 1;
 
@@ -100,10 +97,6 @@ void tick() {
                 field[backup[i].y][backup[i].x] = color;
         spawnPiece();
     }
-
-    // Reset dx and rotate after applying
-    dx = 0;
-    rotate = false;
 }
 
 void clearLines() {
@@ -123,47 +116,9 @@ void clearLines() {
     }
 }
 
-
-void drawFog() {
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-    
-    // Semi-transparent white/gray fog
-    glColor4f(0.8f, 0.8f, 0.8f, 0.2f);  // Gray fog with some transparency
-    glBegin(GL_QUADS);
-        glVertex2i(0, 0);
-        glVertex2i(WIDTH * BLOCK_SIZE, 0);
-        glVertex2i(WIDTH * BLOCK_SIZE, HEIGHT * BLOCK_SIZE);
-        glVertex2i(0, HEIGHT * BLOCK_SIZE);
-    glEnd();
-
-    glDisable(GL_BLEND); // Disable blending after drawing the fog
-}
-
-void drawGlow() {
-    glEnable(GL_BLEND);
-    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
-    // Soft red glow at the top (like a blood-red moon glow)
-    glColor4f(0.8f, 0.1f, 0.1f, 0.3f); // Red glow with transparency
-    glBegin(GL_QUADS);
-        glVertex2i(0, 0);
-        glVertex2i(WIDTH * BLOCK_SIZE, 0);
-        glVertex2i(WIDTH * BLOCK_SIZE, HEIGHT * BLOCK_SIZE / 2);
-        glVertex2i(0, HEIGHT * BLOCK_SIZE / 2);
-    glEnd();
-
-    glDisable(GL_BLEND);
-}
-
 void display() {
     glClear(GL_COLOR_BUFFER_BIT);
 
-    // Draw background effects (fog, glow)
-    drawFog();
-    drawGlow();
-
-    // Draw the game field and current pieces
     for (int i = 0; i < HEIGHT; ++i)
         for (int j = 0; j < WIDTH; ++j)
             if (field[i][j])
@@ -173,11 +128,11 @@ void display() {
         if (current[i].y >= 0)
             drawBlock(current[i].x, current[i].y, color);
 
-    glColor3f(1, 1, 1);  // White text color
+    glColor3f(1, 1, 1);
     drawText(10, 30, "Score: " + std::to_string(score));
 
     if (gameOver)
-        drawText(110, HEIGHT * BLOCK_SIZE / 2, "GAME OVER");
+        drawText(60, HEIGHT * BLOCK_SIZE / 2, "GAME OVER");
 
     glutSwapBuffers();
 }
@@ -209,54 +164,12 @@ void keyboardUp(int key, int, int) {
 }
 
 void init() {
-    // Set background color to deep purple, giving a dark and eerie vibe
-    glClearColor(0.2f, 0.1f, 0.3f, 1.0f); // Dark purple background color
-    glEnable(GL_TEXTURE_2D);  // Enable textures if you want to use one
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluOrtho2D(0, WIDTH * BLOCK_SIZE, 0, HEIGHT * BLOCK_SIZE);
+    gluOrtho2D(0, WIDTH * BLOCK_SIZE, HEIGHT * BLOCK_SIZE, 0);
     srand(time(0));
     spawnPiece();
 }
-
-void reshape(int w, int h) {
-    float gameAspect = (float)(WIDTH * BLOCK_SIZE) / (HEIGHT * BLOCK_SIZE);
-    float windowAspect = (float)w / h;
-
-    int vpWidth, vpHeight;
-    int vpX = 0, vpY = 0;
-
-    if (windowAspect > gameAspect) {
-        // Window is wider than game: pillarbox
-        vpHeight = h;
-        vpWidth = (int)(h * gameAspect);
-        vpX = (w - vpWidth) / 2;
-    } else {
-        // Window is taller than game: letterbox
-        vpWidth = w;
-        vpHeight = (int)(w / gameAspect);
-        vpY = (h - vpHeight) / 2;
-    }
-
-    glViewport(vpX, vpY, vpWidth, vpHeight);
-
-    glMatrixMode(GL_PROJECTION);
-    glLoadIdentity();
-    // glRotatef(180, 0, 0, 0);
-    gluOrtho2D(WIDTH * BLOCK_SIZE, 0, 0, HEIGHT * BLOCK_SIZE);
-    glMatrixMode(GL_MODELVIEW);
-}
-
-
-void playMusic() {
-    if (!music.openFromFile("tetris_audio.wav")) {
-        printf("Failed to load music!\n");
-        return;
-    }
-    music.setLoop(true);
-    music.play();
-}
-
 
 int main(int argc, char** argv) {
     glutInit(&argc, argv);
@@ -268,10 +181,7 @@ int main(int argc, char** argv) {
     glutDisplayFunc(display);
     glutSpecialFunc(keyboard);
     glutSpecialUpFunc(keyboardUp);
-    glutReshapeFunc(reshape);  // <-- Add this line
     glutTimerFunc(50, timerFunc, 0);
-    playMusic();
     glutMainLoop();
     return 0;
 }
-
